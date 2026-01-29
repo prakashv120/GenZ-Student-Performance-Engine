@@ -3,12 +3,37 @@ import pandas as pd
 import joblib
 import seaborn as sns
 import matplotlib.pyplot as plt
-import plotly.graph_objects as go
 
 st.set_page_config(page_title="Gen-Z Student Engine", layout="wide")
 
 # ---------- LOAD MODEL ----------
 model = joblib.load("student_model.pkl")
+
+
+# ---------- DONUT GAUGE FUNCTION ----------
+def donut_gauge(score):
+    fig, ax = plt.subplots(figsize=(2.6, 2.6))
+
+    color = "#2ecc71"
+    if score > 70:
+        color = "#e74c3c"
+    elif score > 40:
+        color = "#f39c12"
+
+    ax.pie(
+        [score, 100 - score],
+        startangle=90,
+        colors=[color, "#ecf0f1"],
+        wedgeprops={'width': 0.35}
+    )
+
+    ax.text(0, 0, f"{score}%",
+            ha='center', va='center',
+            fontsize=20, fontweight='bold')
+
+    ax.axis('equal')
+    st.pyplot(fig, use_container_width=False)
+
 
 # ---------- SIDEBAR ----------
 st.sidebar.header("Step 1: Upload File")
@@ -55,44 +80,43 @@ if file is not None:
 
     st.markdown("---")
 
-    # ---------- GAUGE ----------
+    # ---------- DONUT GAUGE ----------
     st.subheader("🚦 Overall Class Risk Gauge")
 
     risk_score = int((high / total) * 100)
 
-    fig = go.Figure(go.Indicator(
-        mode="gauge+number",
-        value=risk_score,
-        title={'text': "Class Risk Score"},
-        gauge={
-            'axis': {'range': [0, 100]},
-            'bar': {'color': "black"},
-            'steps': [
-                {'range': [0, 40], 'color': "green"},
-                {'range': [40, 70], 'color': "orange"},
-                {'range': [70, 100], 'color': "red"},
-            ],
-        }
-    ))
+    colg1, colg2 = st.columns([1, 3])
 
-    st.plotly_chart(fig, use_container_width=True)
+    with colg1:
+        donut_gauge(risk_score)
+
+    with colg2:
+        st.markdown(f"""
+        ### Class Risk Score: **{risk_score}%**
+
+        - 🟢 Low Risk: Good class performance  
+        - 🟡 Medium Risk: Needs monitoring  
+        - 🔴 High Risk: Immediate attention required
+        """)
 
     st.markdown("---")
 
-    # ---------- DISTRIBUTION ----------
+    # ---------- PERFORMANCE DISTRIBUTION ----------
     st.subheader("📈 Performance Distribution")
 
     col1, col2 = st.columns(2)
 
     with col1:
-        fig1, ax1 = plt.subplots()
+        fig1, ax1 = plt.subplots(figsize=(3.5, 2.2))
         sns.countplot(x="Predicted_Result", data=df, ax=ax1)
-        st.pyplot(fig1)
+        ax1.set_title("Result Distribution")
+        st.pyplot(fig1, use_container_width=False)
 
     with col2:
-        fig2, ax2 = plt.subplots()
+        fig2, ax2 = plt.subplots(figsize=(3.5, 2.2))
         sns.countplot(x="Risk_Level", data=df, ax=ax2)
-        st.pyplot(fig2)
+        ax2.set_title("Risk Distribution")
+        st.pyplot(fig2, use_container_width=False)
 
     st.markdown("---")
 
@@ -102,19 +126,21 @@ if file is not None:
     col3, col4 = st.columns(2)
 
     with col3:
-        fig3, ax3 = plt.subplots()
+        fig3, ax3 = plt.subplots(figsize=(3.5, 2.2))
         sns.boxplot(x="Predicted_Result", y="attendance", data=df, ax=ax3)
-        st.pyplot(fig3)
+        ax3.set_title("Attendance vs Result")
+        st.pyplot(fig3, use_container_width=False)
 
     with col4:
-        fig4, ax4 = plt.subplots()
+        fig4, ax4 = plt.subplots(figsize=(3.5, 2.2))
         sns.boxplot(x="Predicted_Result", y="phone_usage", data=df, ax=ax4)
-        st.pyplot(fig4)
+        ax4.set_title("Phone Usage vs Result")
+        st.pyplot(fig4, use_container_width=False)
 
     st.markdown("---")
 
     # ---------- TABLE ----------
     st.subheader("🧾 Student Prediction Report")
-    st.dataframe(df)
+    st.dataframe(df, use_container_width=True)
 
     st.success("✅ Full AI analysis completed!")
